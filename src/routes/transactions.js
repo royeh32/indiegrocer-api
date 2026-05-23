@@ -348,10 +348,16 @@ export async function transactionsRoutes(fastify) {
           p_store_id: txn.store_id,
           p_product_id: item.product_id,
           p_quantity: item.quantity
-        }).catch(err => {
-          // Non-fatal — log and continue. Inventory sync can fix later.
+    try {
+          await supabaseAdmin.rpc('decrement_inventory', {
+            p_tenant_id: req.tenantId,
+            p_store_id: txn.store_id,
+            p_product_id: item.product_id,
+            p_quantity: item.quantity
+          })
+        } catch (err) {
           req.log.warn({ err, product_id: item.product_id }, 'Inventory decrement failed')
-        })
+        }
       }
     }
 
