@@ -62,7 +62,7 @@ fastify.setErrorHandler((err, req, reply) => {
 // ── Start ──────────────────────────────────────────────────────────────────
 
 const PORT = parseInt(process.env.PORT || '3000')
-const HOST = process.env.HOST || '0.0.0.0'
+const HOST = '0.0.0.0'
 
 try {
   await fastify.listen({ port: PORT, host: HOST })
