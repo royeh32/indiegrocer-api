@@ -343,12 +343,7 @@ export async function transactionsRoutes(fastify) {
     // Decrement inventory for non-weighted items
     for (const item of txn.transaction_items) {
       if (item.product_id) {
-        await supabaseAdmin.rpc('decrement_inventory', {
-          p_tenant_id: req.tenantId,
-          p_store_id: txn.store_id,
-          p_product_id: item.product_id,
-          p_quantity: item.quantity
-    try {
+        try {
           await supabaseAdmin.rpc('decrement_inventory', {
             p_tenant_id: req.tenantId,
             p_store_id: txn.store_id,
@@ -361,7 +356,7 @@ export async function transactionsRoutes(fastify) {
       }
     }
 
-    return reply.send({
+        return reply.send({
       transaction: completedTxn,
       receipt_number: receiptNumber,
       change_due: parseFloat((tenderedTotal - txn.total).toFixed(2))
