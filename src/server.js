@@ -20,10 +20,7 @@ const fastify = Fastify({
 await fastify.register(cors, {
   origin: process.env.NODE_ENV === 'development'
     ? true                          // allow all origins in dev
-    : [
-        'https://your-dashboard.vercel.app',
-        /\.indiegrocer\.app$/       // allow any subdomain in prod
-      ],
+    : true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 })
