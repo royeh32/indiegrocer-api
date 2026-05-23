@@ -55,26 +55,39 @@ export async function productsRoutes(fastify) {
       .eq('is_active', true)
 
     if (barcode) {
-      query = query.eq('barcode', barcode)
+      // Try barcode with leading zero variants to handle scanner/export differences
+      const candidates = new Set([
+        barcode,
+        barcode.padStart(12, '0'),
+        barcode.padStart(13, '0'),
+        barcode.replace(/^0+/, '') || barcode,
+      ])
+
+      const { data: found, error: findError } = await supabaseAdmin
+        .from('products')
+        .select('id, name, brand, barcode, plu_code, unit_of_measure, price, cost, is_ebt_eligible, is_wic_eligible, is_taxable, is_age_restricted, age_restriction_min, is_weighted, image_url, categories ( id, name, usda_snap_category, tax_rate_override ), inventory ( qty_on_hand, qty_on_order, aisle, bin )')
+        .eq('tenant_id', req.tenantId)
+        .eq('is_active', true)
+        .in('barcode', [...candidates])
+        .limit(1)
+
+      const data = found?.[0]
+      if (findError || !data) {
+        return reply.code(404).send({ error: 'Product not found', barcode })
+      }
+
+      const effectiveTaxRate = data.categories?.tax_rate_override ?? 0
+      return reply.send({ product: { ...data, effective_tax_rate: effectiveTaxRate } })
+
     } else {
       query = query.eq('plu_code', plu)
-    }
-
-    const { data, error } = await query.single()
-
-    if (error || !data) {
-      return reply.code(404).send({ error: 'Product not found', barcode, plu })
-    }
-
-    // Resolve effective tax rate: category override → store default → 0
-    const effectiveTaxRate = data.categories?.tax_rate_override ?? 0
-
-    return reply.send({
-      product: {
-        ...data,
-        effective_tax_rate: effectiveTaxRate
+      const { data, error } = await query.single()
+      if (error || !data) {
+        return reply.code(404).send({ error: 'Product not found', barcode, plu })
       }
-    })
+      const effectiveTaxRate = data.categories?.tax_rate_override ?? 0
+      return reply.send({ product: { ...data, effective_tax_rate: effectiveTaxRate } })
+    }
   })
 
 
